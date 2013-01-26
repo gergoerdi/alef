@@ -65,3 +65,9 @@
     (loop for (name val ref) in bindings
           do (setf (gderef ref) (gderef (graph-from-expr val new-vars))))
     (graph-from-expr (expr-body expr) new-vars)))
+
+(defmethod graph-from-expr ((expr lambda-expr) vars)
+  (let* ((new-vars (loop for name in (mapcan #'pattern-vars (expr-formals expr))
+                         for var = (make-instance 'gref :node (make-instance 'var-gnode :var name))
+                         collect (cons name var))))
+    (graph-from-expr (expr-body expr) (append new-vars vars))))
