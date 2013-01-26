@@ -42,6 +42,17 @@
    (args :initarg :args :initform nil :reader pattern-args))
   (:documentation "Constructor pattern"))
 
+(defgeneric pattern-vars (pat))
+
+(defmethod pattern-vars ((pat wildcard-pattern))
+  (list))
+
+(defmethod pattern-vars ((pat var-pattern))
+  (list (pattern-symbol pat)))
+
+(defmethod pattern-vars ((pat cons-pattern))
+  (mapcar #'pattern-vars (pattern-args pat)))
+
 ;; TODO
 (defun constructorp (x)
   (typecase x
