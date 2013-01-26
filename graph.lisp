@@ -9,6 +9,9 @@
 (defclass cons-gnode (gnode)
   ((cons :initarg :cons :reader gnode-cons)))
 
+(defclass var-gnode (gnode)
+  ((var :initarg :var :reader gnode-var)))
+
 (defclass apply-gnode (gnode)
   ((fun :initarg :fun :reader gnode-fun)
    (args :initarg :args :reader gnode-args)))
@@ -16,6 +19,9 @@
 (defgeneric deepclone-gnode (gnode f))
 
 (defmethod deepclone-gnode ((gnode cons-gnode) f)
+  gnode)
+
+(defmethod deepclone-gnode ((gnode var-gnode) f)
   gnode)
 
 (defmethod deepclone-gnode ((gnode apply-gnode) f)
