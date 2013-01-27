@@ -7,14 +7,20 @@
   (:documentation "Pointer in the graph representation"))
 
 (defclass cons-gnode (gnode)
-  ((cons :initarg :cons :reader gnode-cons)))
+  ((cons :initarg :cons :reader gnode-cons)
+   (args :initarg :args :initform nil :reader gnode-args)))
 
 (defclass var-gnode (gnode)
   ((var :initarg :var :reader gnode-var)))
 
 (defclass apply-gnode (gnode)
   ((fun :initarg :fun :reader gnode-fun)
-   (args :initarg :args :reader gnode-args)))
+   (arg :initarg :arg :reader gnode-arg)))
+
+(defclass fun-gnode (gnode)
+  ((fun-name :initarg :fun-name :reader gnode-fun-name)
+   (arity :initarg :arity :reader gnode-fun-arity)
+   (args :initarg :args :initform (list) :reader gnode-args)))
 
 (defgeneric deepclone-gnode (gnode f))
 
@@ -27,6 +33,12 @@
 (defmethod deepclone-gnode ((gnode apply-gnode) f)
   (make-instance 'apply-gnode
                  :fun (funcall f (gnode-fun gnode))
+                 :arg (funcall f (gnode-arg gnode))))
+
+(defmethod deepclone-gnode ((gnode fun-gnode) f)
+  (make-instance 'apply-gnode
+                 :fun-name (gnode-fun-name gnode)
+                 :arity (gnode-fun-arity gnode)
                  :args (mapcar f (gnode-args gnode))))
 
 (defun deepclone-gref (gref &optional mapping)
@@ -53,10 +65,9 @@
   (make-instance 'gref :node (make-instance 'cons-gnode :cons (expr-symbol expr))))
 
 (defmethod graph-from-expr ((expr apply-expr) vars)
-  (make-instance 'gref
-                 :node (make-instance 'apply-gnode
-                                      :fun (graph-from-expr (expr-fun expr) vars)
-                                      :args (list (graph-from-expr (expr-arg expr) vars)))))
+  (let ((fun (graph-from-expr (expr-fun expr) vars))
+        (arg (graph-from-expr (expr-arg expr) vars)))
+    (make-instance 'gref :node (make-instance 'apply-gnode :fun fun :arg arg))))
 
 (defmethod graph-from-expr ((expr let-expr) vars)
   (let* ((bindings (loop for (name . val) in (expr-bindings expr)

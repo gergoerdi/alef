@@ -10,7 +10,7 @@
         (dot-from-gnode (gderef gref) dot)
         dot)))
 
-(defun format-cons (x)
+(defun format-symbol (x)
   (if (symbolp x) (symbol-name x)
       (format nil "~A" x)))
 
@@ -21,15 +21,22 @@
   (format *dot-stream* "~&~A -> ~A[label=\"~A\"]" dot/from dot/to label))
 
 (defmethod dot-from-gnode ((gnode cons-gnode) dot)
-  (dot-node dot (format-cons (gnode-cons gnode)) "shape=box, fillcolor=chartreuse"))
+  (dot-node dot (format-symbol (gnode-cons gnode)) "shape=box, fillcolor=chartreuse")
+  (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
+        for index = 1 then (1+ index)
+        do (dot-edge dot arg-dot (format nil "~D." index)))  )
 
 (defmethod dot-from-gnode ((gnode var-gnode) dot)
-  (dot-node dot (format-cons (gnode-var gnode)) "shape=box, fillcolor=lightblue"))
+  (dot-node dot (format-symbol (gnode-var gnode)) "shape=box, fillcolor=lightblue"))
 
 (defmethod dot-from-gnode ((gnode apply-gnode) dot)
-  (dot-node dot "" "shape=circle")
+  (dot-node dot "" "shape=circle, ordering=out")
   (dot-edge dot (dot-from-gref* (gnode-fun gnode)) "f")
-  (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
+  (dot-edge dot (dot-from-gref* (gnode-arg gnode)) "x"))
+
+(defmethod dot-from-gnode ((gnode fun-gnode) dot)
+  (dot-node dot (format-symbol (gnode-fun-name gnode)) "shape=box, fillcolor=yellow")
+    (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
         for index = 1 then (1+ index)
         do (dot-edge dot arg-dot (format nil "~D." index))))
 
