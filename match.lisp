@@ -6,27 +6,22 @@
   (:report (lambda (condition stream)
              (format stream "Need to reduce ~A" (need-reduce-gref condition)))))
 
-(defgeneric match-pattern (pat gref))
+(defun match-pattern (pat gref)
+  (match-pattern* pat (gderef gref) gref))
 
-(defmethod match-pattern ((pat wildcard-pattern) gref)
+(defgeneric match-pattern* (pat gnode gref))
+
+(defmethod match-pattern* ((pat wildcard-pattern) gnode gref)
   (list))
 
-(defmethod match-pattern ((pat var-pattern) gref)
+(defmethod match-pattern* ((pat var-pattern) gnode gref)
   (list (cons (pattern-symbol pat) gref)))
 
-(defmethod match-pattern ((pat cons-pattern) gref)
-  (labels
-      ((match-head (gref)
-         (typecase (gderef gref)
-           (cons-gnode
-            (unless (eq (gnode-cons (gderef gref)) (pattern-cons pat))
-              (error 'no-match)))
-           (t
-            (error 'need-reduce :gref gref)))))
-    (typecase (gderef gref)
-      ;; Because of well-typedness, there is no need to check arity here
-      (cons-gnode
-       (match-head gref))
-      (apply-gnode
-       (match-head (gnode-fun (gderef gref)))
-       (mapcan #'match-pattern (pattern-args pat) (gnode-args (gderef gref)))))))
+(defmethod match-pattern* ((pat cons-pattern) (gnode cons-gnode) gref)
+  (unless (eq (pattern-cons pat) (gnode-cons gnode))
+    (error 'no-match))
+  ;; Because of well-typedness, there is no need to check arity here
+  (mapcan #'match-pattern (pattern-args pat) (gnode-args gnode)))
+
+(defmethod match-pattern* ((pat cons-pattern) gnode gref)
+  (error 'need-reduce :gref gref))
