@@ -2,7 +2,9 @@
   ())
 
 (define-condition need-reduce ()
-  ((gref :initarg :gref :reader need-reduce-gref)))
+  ((gref :initarg :gref :reader need-reduce-gref))
+  (:report (lambda (condition stream)
+             (format stream "Need to reduce ~A" (need-reduce-gref condition)))))
 
 (defgeneric match-pattern (pat gref))
 
