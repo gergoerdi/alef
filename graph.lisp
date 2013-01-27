@@ -46,13 +46,16 @@
                  :arity (gnode-fun-arity gnode)
                  :args (mapcar f (gnode-args gnode))))
 
-(defun deepclone-gref (gref &optional mapping)
+(defun deepclone-gref (gref &optional vars mapping)
   (let ((dict (make-hash-table)))
     (when mapping
       (loop for (k . v) in mapping
             do (setf (gethash k dict) v)))
     (labels ((deepclone (gref)
-               (or (gethash gref dict)
+               (or
+                (and (typep (gderef gref) 'var-gnode)
+                     (cdr (assoc (gnode-var (gderef gref)) vars)))
+                (gethash gref dict)
                    (let ((gref/copy (make-instance 'gref)))
                      (setf (gethash gref dict) gref/copy)
                      (setf (gderef gref/copy) (deepclone-gnode (gderef gref) #'deepclone))
