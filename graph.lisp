@@ -6,6 +6,9 @@
   ((node :initarg :node :accessor gderef))
   (:documentation "Pointer in the graph representation"))
 
+(defun make-gref (gnode)
+  (make-instance 'gref :node gnode))
+
 (defclass cons-gnode (gnode)
   ((cons :initarg :cons :reader gnode-cons)
    (args :initarg :args :initform nil :reader gnode-args)))
@@ -25,7 +28,9 @@
 (defgeneric deepclone-gnode (gnode f))
 
 (defmethod deepclone-gnode ((gnode cons-gnode) f)
-  gnode)
+  (make-instance 'cons-gnode
+                 :cons (gnode-cons gnode)
+                 :args (mapcar f (gnode-args gnode))))
 
 (defmethod deepclone-gnode ((gnode var-gnode) f)
   gnode)
@@ -36,7 +41,7 @@
                  :arg (funcall f (gnode-arg gnode))))
 
 (defmethod deepclone-gnode ((gnode fun-gnode) f)
-  (make-instance 'apply-gnode
+  (make-instance 'fun-gnode
                  :fun-name (gnode-fun-name gnode)
                  :arity (gnode-fun-arity gnode)
                  :args (mapcar f (gnode-args gnode))))
@@ -62,12 +67,12 @@
         (error "Variable not in scope: ~s" var))))
 
 (defmethod graph-from-expr ((expr cons-expr) vars)
-  (make-instance 'gref :node (make-instance 'cons-gnode :cons (expr-symbol expr))))
+  (make-gref (make-instance 'cons-gnode :cons (expr-symbol expr))))
 
 (defmethod graph-from-expr ((expr apply-expr) vars)
   (let ((fun (graph-from-expr (expr-fun expr) vars))
         (arg (graph-from-expr (expr-arg expr) vars)))
-    (make-instance 'gref :node (make-instance 'apply-gnode :fun fun :arg arg))))
+    (make-gref (make-instance 'apply-gnode :fun fun :arg arg))))
 
 (defmethod graph-from-expr ((expr let-expr) vars)
   (let* ((bindings (loop for (name . val) in (expr-bindings expr)
@@ -79,6 +84,6 @@
 
 (defmethod graph-from-expr ((expr lambda-expr) vars)
   (let* ((new-vars (loop for name in (mapcan #'pattern-vars (expr-formals expr))
-                         for var = (make-instance 'gref :node (make-instance 'var-gnode :var name))
+                         for var = (make-gref (make-instance 'var-gnode :var name))
                          collect (cons name var))))
     (graph-from-expr (expr-body expr) (append new-vars vars))))
