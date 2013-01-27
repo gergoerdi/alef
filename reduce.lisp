@@ -21,6 +21,10 @@
   ;; (error "Internal error: variable reference in head")
   nil)
 
+(defmethod reduce-graph-node ((fun fun-gnode))
+  (assert (= (length (gnode-args fun)) (gnode-fun-arity fun)))
+  (error "fun-gnode"))
+
 (defgeneric gnode-add-arg (gnode arg))
 
 (defmethod gnode-add-arg ((gnode cons-gnode) arg)
@@ -34,17 +38,20 @@
                  :arity (gnode-fun-arity gnode)
                  :args (append (gnode-args gnode) (list arg))))
 
+(defgeneric reduce-app (gnode arg))
+
+(defmethod reduce-app ((gnode gnode) arg)
+  nil)
+
+(defmethod reduce-app ((fun fun-gnode) arg)
+  (when (< (length (gnode-args fun)) (gnode-fun-arity fun))
+    (gnode-add-arg fun arg)))
+
+(defmethod reduce-app ((cons cons-gnode) arg)
+  (gnode-add-arg cons arg))
+
 (defmethod reduce-graph-node ((app apply-gnode))
-  (let ((fun (gderef (gnode-fun app))))
-    (typecase fun
-      (fun-gnode
-       (if (< (length (gnode-args fun)) (gnode-fun-arity fun))
-           (gnode-add-arg fun (gnode-arg app))
-           (error 'need-reduce :gref (gnode-fun app))))
-      (cons-gnode
-       (gnode-add-arg fun (gnode-arg app)))
-      (var-gnode
-       (error "var-gnode"))
-      (t
-       (error 'need-reduce :gref (gnode-fun app))))))
+  (let ((fun (gnode-fun app)))
+    (or (reduce-app (gderef fun) (gnode-arg app))
+        (error 'need-reduce :gref fun))))
 
