@@ -1,5 +1,36 @@
 (defvar *functions*)
 
+(defclass function-info ()
+  ())
+
+(defclass prim-function-info (function-info)
+  ((arity :initarg :arity :reader function-arity)
+   (fun :initarg :fun :reader prim-function)))
+
+(defgeneric reduce-function (fun-info args))
+
+(defmethod reduce-function ((fun-info prim-function-info) args)
+  (make-instance 'cons-gnode
+                 :cons (apply (prim-function fun-info)
+                              (mapcar #'gnode-cons args))))
+
+(defclass match-function-info (function-info)
+  ((matches :initarg :matches :reader function-matches)))
+
+(defmethod function-arity ((function-info match-function-info))
+  (length (caar matches)))
+
+(defun lookup-function (fun-name)
+  (gethash fun-name *functions*))
+
+(defun register-match-function (fun-name matches)
+  (setf (gethash fun-name *functions*)
+        (make-instance 'match-function-info :matches matches)))
+
+(defun register-prim-function (fun-name arity fun)
+  (setf (gethash fun-name *functions*)
+        (make-instance 'prim-function-info :arity arity :fun fun)))
+
 (defgeneric reduce-graph-node (gnode))
 
 (defun reduce-graph (gref)
@@ -23,7 +54,8 @@
 
 (defmethod reduce-graph-node ((fun fun-gnode))
   (assert (= (length (gnode-args fun)) (gnode-fun-arity fun)))
-  (error "fun-gnode"))
+  (let ((fun-info (lookup-function (gnode-fun-name fun))))
+    (reduce-function fun-info (mapcar #'gderef (gnode-args fun)))))
 
 (defgeneric gnode-add-arg (gnode arg))
 
