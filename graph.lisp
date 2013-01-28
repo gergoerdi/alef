@@ -67,7 +67,7 @@
 (defmethod graph-from-expr ((expr var-expr) vars)
   (let ((var (expr-symbol expr)))
     (or (cdr (assoc var vars))
-        (error "Variable not in scope: ~s" var))))
+        (make-gref (make-instance 'var-gnode :var var)))))
 
 (defmethod graph-from-expr ((expr cons-expr) vars)
   (make-gref (make-instance 'cons-gnode :cons (expr-symbol expr))))
