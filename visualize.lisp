@@ -40,7 +40,7 @@
         for index = 1 then (1+ index)
         do (dot-edge dot arg-dot (format nil "~D." index))))
 
-(defun dot-from-gref (gref stream)
+(defun dot-from-gref (gref &optional (stream *standard-output*))
   (let ((*dot-mapping* (make-hash-table))
         (*dot-stream* stream))
     (format *dot-stream* "digraph G{~&")
