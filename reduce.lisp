@@ -12,13 +12,21 @@
 (defmethod reduce-function ((fun-info prim-function-info) args)
   (make-instance 'cons-gnode
                  :cons (apply (prim-function fun-info)
-                              (mapcar #'gnode-cons args))))
+                              (mapcar #'gnode-cons (mapcar #'gderef args)))))
 
 (defclass match-function-info (function-info)
   ((matches :initarg :matches :reader function-matches)))
 
 (defmethod function-arity ((function-info match-function-info))
   (length (caar matches)))
+
+(defmethod reduce-function ((fun-info match-function-info) args)
+  (format nil "~&~A~&" args)
+  (loop for (pats . skeleton) in (function-matches fun-info)
+        do (handler-case
+               (return (gderef (deepclone-gref skeleton (mapcan #'match-pattern pats args))))
+             (no-match ()))
+        finally (error 'no-match)))
 
 (defun lookup-function (fun-name)
   (gethash fun-name *functions*))
@@ -55,7 +63,7 @@
 (defmethod reduce-graph-node ((fun fun-gnode))
   (assert (= (length (gnode-args fun)) (gnode-fun-arity fun)))
   (let ((fun-info (lookup-function (gnode-fun-name fun))))
-    (reduce-function fun-info (mapcar #'gderef (gnode-args fun)))))
+    (reduce-function fun-info (gnode-args fun))))
 
 (defgeneric gnode-add-arg (gnode arg))
 
