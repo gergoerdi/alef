@@ -30,7 +30,7 @@
   (dot-node dot (format-symbol (gnode-var gnode)) "shape=box, fillcolor=lightblue"))
 
 (defmethod dot-from-gnode ((gnode apply-gnode) dot)
-  (dot-node dot "" "shape=circle, ordering=out")
+  (dot-node dot "" "shape=circle, ordering=out, fixedsize=true, width=.25")
   (dot-edge dot (dot-from-gref* (gnode-fun gnode)) "f")
   (dot-edge dot (dot-from-gref* (gnode-arg gnode)) "x"))
 
