@@ -53,6 +53,10 @@
       (when (reduce-graph* (need-reduce-gref req))
         (reduce-graph* gref)))))
 
+(defun reduce-to-whnf (gref)
+  (when (reduce-graph* gref)
+    (reduce-to-whnf gref)))
+
 (defmethod reduce-graph-node ((gnode cons-gnode))
   nil)
 
