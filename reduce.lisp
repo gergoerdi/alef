@@ -7,12 +7,21 @@
   ((arity :initarg :arity :reader function-arity)
    (fun :initarg :fun :reader prim-function)))
 
+(defgeneric gnode-force-cons (gnode gref))
+
+(defmethod gnode-force-cons ((gnode cons-gnode) gref)
+  (gnode-cons gnode))
+
+(defmethod gnode-force-cons ((gnode gnode) gref)
+  (error 'need-reduce :gref gref))
+
 (defgeneric reduce-function (fun-info args))
 
-(defmethod reduce-function ((fun-info prim-function-info) args)
-  (make-instance 'cons-gnode
-                 :cons (apply (prim-function fun-info)
-                              (mapcar #'gnode-cons (mapcar #'gderef args)))))
+(defmethod reduce-function ((fun-info prim-function-info) arg-grefs)
+  (let ((args (loop for arg-gref in arg-grefs
+                    collect (gnode-force-cons (gderef arg-gref) arg-gref))))
+    (make-instance 'cons-gnode
+                   :cons (apply (prim-function fun-info) args))))
 
 (defclass match-function-info (function-info)
   ((matches :initarg :matches :reader function-matches)))
