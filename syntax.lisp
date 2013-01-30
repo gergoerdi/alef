@@ -57,6 +57,7 @@
 (defun constructorp (x)
   (typecase x
     (integer t)
+    (string t)
     (atom
      (or (eq x 'pair)
          (eq x 'cons)
