@@ -1,12 +1,3 @@
-(defvar *functions*)
-
-(defclass function-info ()
-  ())
-
-(defclass prim-function-info (function-info)
-  ((arity :initarg :arity :reader function-arity)
-   (fun :initarg :fun :reader prim-function)))
-
 (defgeneric gnode-force-cons (gnode gref))
 
 (defmethod gnode-force-cons ((gnode cons-gnode) gref)
@@ -22,31 +13,6 @@
                     collect (gnode-force-cons (gderef arg-gref) arg-gref))))
     (make-instance 'cons-gnode
                    :cons (apply (prim-function fun-info) args))))
-
-(defclass match-function-info (function-info)
-  ((matches :initarg :matches :reader function-matches)))
-
-(defmethod function-arity ((function-info match-function-info))
-  (length (caar matches)))
-
-(defmethod reduce-function ((fun-info match-function-info) args)
-  (format nil "~&~A~&" args)
-  (loop for (pats . skeleton) in (function-matches fun-info)
-        do (handler-case
-               (return (gderef (deepclone-gref skeleton (mapcan #'match-pattern pats args))))
-             (no-match ()))
-        finally (error 'no-match)))
-
-(defun lookup-function (fun-name)
-  (gethash fun-name *functions*))
-
-(defun register-match-function (fun-name matches)
-  (setf (gethash fun-name *functions*)
-        (make-instance 'match-function-info :matches matches)))
-
-(defun register-prim-function (fun-name arity fun)
-  (setf (gethash fun-name *functions*)
-        (make-instance 'prim-function-info :arity arity :fun fun)))
 
 (defgeneric reduce-graph-node (gnode))
 

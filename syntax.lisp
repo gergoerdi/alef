@@ -53,16 +53,6 @@
 (defmethod pattern-vars ((pat cons-pattern))
   (mapcar #'pattern-vars (pattern-args pat)))
 
-;; TODO
-(defun constructorp (x)
-  (typecase x
-    (integer t)
-    (string t)
-    (atom
-     (or (eq x 'pair)
-         (eq x 'cons)
-         (eq x 'nil)))))
-
 (defun normalize-pat (pat)
   (typecase pat
     (atom
