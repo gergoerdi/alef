@@ -14,6 +14,12 @@
     (make-instance 'cons-gnode
                    :cons (apply (prim-function fun-info) args))))
 
+(defmethod reduce-function ((fun-info match-function-info) args)
+  (loop for (pats . body) in (function-matches fun-info)
+        do (handler-case (return (gderef (deepclone-gref body (mapcan #'match-pattern pats args))))
+             (no-match ()))
+        finally (error 'no-match)))
+
 (defgeneric reduce-graph-node (gnode))
 
 (defun reduce-graph (gref)
