@@ -6,10 +6,10 @@
   (:report (lambda (condition stream)
              (format stream "Need to reduce ~A" (need-reduce-gref condition)))))
 
+(defgeneric match-pattern* (pat gnode gref))
+
 (defun match-pattern (pat gref)
   (match-pattern* pat (gderef gref) gref))
-
-(defgeneric match-pattern* (pat gnode gref))
 
 (defmethod match-pattern* ((pat wildcard-pattern) gnode gref)
   (list))
