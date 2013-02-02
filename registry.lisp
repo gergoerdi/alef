@@ -1,16 +1,24 @@
 (defvar *constructors*)
 
+(defvar *functions*)
+
+(defmacro in-fresh-context (&body body)
+  `(let ((*constructors* (make-hash-table))
+         (*functions* (make-hash-table)))
+     (register-builtin-types)
+     (register-prim-functions)
+     ,@body))
+
 (defun add-constructors (constructors)
-  (setf *constructors* (append constructors *constructors*)))
+  (loop for (cons-name . cons-type) in constructors
+        do (setf (gethash cons-name *constructors*) cons-type)))
 
 (defun constructorp (x)
   (typecase x
     (integer t)
     (string t)
     (atom
-     (member x *constructors*))))
-
-(defvar *functions*)
+     (nth-value 1 (gethash x *constructors*)))))
 
 (defclass function-info ()
   ())
