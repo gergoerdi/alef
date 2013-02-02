@@ -92,4 +92,5 @@
   (let* ((new-vars (loop for name in (mapcan #'pattern-vars (expr-formals expr))
                          for var = (make-gref (make-instance 'var-gnode :var name))
                          collect (cons name var))))
+    (error "Not implemented: lambda lifting")
     (graph-from-expr (expr-body expr) (append new-vars vars))))
