@@ -18,7 +18,7 @@
 
 (defclass apply-gnode (gnode)
   ((fun :initarg :fun :reader gnode-fun)
-   (arg :initarg :arg :reader gnode-arg)))
+   (args :initarg :args :reader gnode-args)))
 
 (defclass fun-gnode (gnode)
   ((fun-name :initarg :fun-name :reader gnode-fun-name)
@@ -38,7 +38,7 @@
 (defmethod deepclone-gnode ((gnode apply-gnode) f)
   (make-instance 'apply-gnode
                  :fun (funcall f (gnode-fun gnode))
-                 :arg (funcall f (gnode-arg gnode))))
+                 :args (mapcar f (gnode-args gnode))))
 
 (defmethod deepclone-gnode ((gnode fun-gnode) f)
   (make-instance 'fun-gnode
@@ -78,7 +78,7 @@
 (defmethod graph-from-expr ((expr apply-expr) vars)
   (let ((fun (graph-from-expr (expr-fun expr) vars))
         (arg (graph-from-expr (expr-arg expr) vars)))
-    (make-gref (make-instance 'apply-gnode :fun fun :arg arg))))
+    (make-gref (make-instance 'apply-gnode :fun fun :args (list arg)))))
 
 (defmethod graph-from-expr ((expr let-expr) vars)
   (let* ((bindings (loop for (name . val) in (expr-bindings expr)

@@ -29,10 +29,12 @@
       t)))
 
 (defun reduce-graph* (gref)
-  (handler-case (reduce-graph gref)
-    (need-reduce (req)
-      (when (reduce-graph* (need-reduce-gref req))
-        (reduce-graph* gref)))))
+  (prog1
+      (handler-case (reduce-graph gref)
+        (need-reduce (req)
+          (when (reduce-graph* (need-reduce-gref req))
+            (reduce-graph* gref))))
+    (simplify-apps gref)))
 
 (defun reduce-to-whnf (gref)
   (when (reduce-graph* gref)
@@ -45,38 +47,66 @@
   ;; (error "Internal error: variable reference in head")
   nil)
 
+(defun split-at (l i)
+  (labels ((aux (l i before)
+             (cond
+               ((null l) (values (reverse before) nil (= i 0)))
+               ((= i 0)  (values (reverse before) l t))
+               (t        (aux (cdr l) (1- i) (cons (car l) before))))))
+    (aux l i nil)))
+
 (defmethod reduce-graph-node ((fun fun-gnode))
-  (assert (= (length (gnode-args fun)) (gnode-fun-arity fun)))
-  (let ((fun-info (lookup-function (gnode-fun-name fun))))
-    (reduce-function fun-info (gnode-args fun))))
+  (multiple-value-bind (actuals remaining saturated) (split-at (gnode-args fun) (gnode-fun-arity fun))
+    (when saturated
+      (let* ((fun-info (lookup-function (gnode-fun-name fun)))
+             (result-gnode (reduce-function fun-info actuals)))
+        (if (null remaining) result-gnode
+            (make-instance 'apply-gnode :fun (make-gref result-gnode) :args remaining))))))
 
-(defgeneric gnode-add-arg (gnode arg))
+(defgeneric gnode-add-args (gnode args))
 
-(defmethod gnode-add-arg ((gnode cons-gnode) arg)
+(defmethod gnode-add-args ((gnode gnode) args)
+  nil)
+
+(defmethod gnode-add-args ((gnode cons-gnode) args)
   (make-instance 'cons-gnode
                  :cons (gnode-cons gnode)
-                 :args (append (gnode-args gnode) (list arg))))
+                 :args (append (gnode-args gnode) args)))
 
-(defmethod gnode-add-arg ((gnode fun-gnode) arg)
+(defmethod gnode-add-args ((gnode fun-gnode) args)
   (make-instance 'fun-gnode
                  :fun-name (gnode-fun-name gnode)
                  :arity (gnode-fun-arity gnode)
-                 :args (append (gnode-args gnode) (list arg))))
+                 :args (append (gnode-args gnode) args)))
 
-(defgeneric reduce-app (gnode arg))
-
-(defmethod reduce-app ((gnode gnode) arg)
-  nil)
-
-(defmethod reduce-app ((fun fun-gnode) arg)
-  (when (< (length (gnode-args fun)) (gnode-fun-arity fun))
-    (gnode-add-arg fun arg)))
-
-(defmethod reduce-app ((cons cons-gnode) arg)
-  (gnode-add-arg cons arg))
+(defmethod gnode-add-args ((gnode apply-gnode) args)
+  (make-instance 'apply-gnode
+                 :fun (gnode-fun gnode)
+                 :args (append (gnode-args gnode) args)))
 
 (defmethod reduce-graph-node ((app apply-gnode))
   (let ((fun (gnode-fun app)))
-    (or (reduce-app (gderef fun) (gnode-arg app))
+    (or (gnode-add-args (gderef fun) (gnode-args app))
         (error 'need-reduce :gref fun))))
 
+(defgeneric simplify-app (gnode))
+
+(defmethod simplify-app ((gnode gnode))
+  nil)
+
+(defmethod simplify-app ((app apply-gnode))
+  (mapcar #'simplify-app-gref (cons (gnode-fun app) (gnode-args app)))
+  (gnode-add-args (gderef (gnode-fun app)) (gnode-args app)))
+
+(defvar *grefs*)
+  
+(defun simplify-app-gref (gref)
+  (unless (gethash gref *grefs*)
+    (setf (gethash gref *grefs*) t)
+    (let ((new-gnode (simplify-app (gderef gref))))
+      (when new-gnode
+        (setf (gderef gref) new-gnode)))))
+
+(defun simplify-apps (gref)
+  (let ((*grefs* (make-hash-table)))
+    (simplify-app-gref gref)))

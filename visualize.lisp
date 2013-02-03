@@ -32,7 +32,10 @@
 (defmethod dot-from-gnode ((gnode apply-gnode) dot)
   (dot-node dot "" "shape=circle, ordering=out, fixedsize=true, width=.25")
   (dot-edge dot (dot-from-gref* (gnode-fun gnode)) "f")
-  (dot-edge dot (dot-from-gref* (gnode-arg gnode)) "x"))
+  (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
+        for index = 1 then (1+ index)
+        do (dot-edge dot arg-dot (format nil "~D." index)))
+  )
 
 (defmethod dot-from-gnode ((gnode fun-gnode) dot)
   (dot-node dot (format-symbol (gnode-fun-name gnode)) "shape=box, fillcolor=yellow")
