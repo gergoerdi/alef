@@ -30,7 +30,7 @@
 (defmethod graph-from-expr ((expr var-expr))
   (let* ((var-name (expr-symbol expr))
          (var-expr (cdr (assoc var-name *vars*))))
-    (if var-expr (graph-from-var var-name var-expr)   
+    (if var-expr (graph-from-var var-name var-expr)
         (make-gref
          (or (let ((fun (lookup-function var-name)))
                (and fun (make-instance 'fun-gnode :fun-name var-name :arity (function-arity fun))))
@@ -77,7 +77,7 @@
   (or (cadr (assoc var-name *vars-built*))
       (let* ((gref (make-instance 'gref))
              (gref-ptr (list gref)))
-        (setf (gderef gref) (make-instance 'bottom-gnode :ptr gref-ptr))
+        (setf (gderef gref) (make-instance 'bottom-gnode :var var-name :ptr gref-ptr))
         (push (cons var-name gref-ptr) *vars-built*)
         (let ((gref* (graph-from-expr var-expr)))
           (rplaca gref-ptr gref*)
@@ -92,7 +92,7 @@
 (defgeneric fill-var-gref** (gref gnode))
 
 (defmethod fill-var-gref** (gref (gnode bottom-gnode))
-  (let ((gref* (car (gnode-var-ptr gnode))))    
+  (let ((gref* (car (gnode-var-ptr gnode))))
     (fill-var-gref* gref*)))
 
 (defmethod fill-var-gref** (gref gnode)
@@ -102,9 +102,9 @@
 (defun fill-var-gref* (gref)
   (or (cdr (assoc gref *filled*))
       (progn
-        (push (cons gref gref) *filled*)                  
+        (push (cons gref gref) *filled*)
         (let ((gref* (fill-var-gref** gref (gderef gref))))
-          (push (cons gref gref*) *filled*)       
+          (push (cons gref gref*) *filled*)
           gref*))))
 
 (defgeneric fill-var-gnode (gnode))
