@@ -28,6 +28,12 @@
 (defun dot-edge (dot/from dot/to label)
   (format *dot-stream* "~&~A -> ~A[label=\"~A\"]" dot/from dot/to label))
 
+(defmethod dot-from-gnode ((gnode bottom-gnode) dot)
+  ;; (dot-node dot (format-symbol (var-name (gnode-var-def gnode))) "shape=house, fillcolor=lightsalmon")
+  ;; (dot-node dot "" "shape=house, fillcolor=lightsalmon")
+  (dot-node dot "" "shape=point")
+  (dot-edge dot dot ""))
+
 (defmethod dot-from-gnode ((gnode cons-gnode) dot)
   (dot-node dot (format-symbol (gnode-cons gnode)) "shape=box, fillcolor=chartreuse")
   (loop for arg-dot in (mapcar #'dot-from-gref (gnode-args gnode))

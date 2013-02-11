@@ -4,7 +4,8 @@
 
 (defmacro in-fresh-context (&body body)
   `(let ((*constructors* (make-hash-table))
-         (*functions* (make-hash-table)))
+         (*functions* (make-hash-table))
+         (*vars* (list)))
      (register-builtin-types)
      (register-prim-functions)
      ,@body))
