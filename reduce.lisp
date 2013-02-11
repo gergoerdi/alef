@@ -47,13 +47,13 @@
   ;; (error "Internal error: variable reference in head")
   nil)
 
-(defun split-at (l i)
-  (labels ((aux (l i before)
+(defun split-at (lst i)
+  (labels ((aux (lst i before)
              (cond
-               ((null l) (values (reverse before) nil (= i 0)))
-               ((= i 0)  (values (reverse before) l t))
-               (t        (aux (cdr l) (1- i) (cons (car l) before))))))
-    (aux l i nil)))
+               ((null lst) (values (reverse before) nil (= i 0)))
+               ((= i 0)    (values (reverse before) lst t))
+               (t          (aux (cdr lst) (1- i) (cons (car lst) before))))))
+    (aux lst i nil)))
 
 (defmethod reduce-graph-node ((fun fun-gnode))
   (multiple-value-bind (actuals remaining saturated) (split-at (gnode-args fun) (gnode-fun-arity fun))
