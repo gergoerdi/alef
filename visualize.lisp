@@ -3,12 +3,20 @@
 
 (defgeneric dot-from-gnode (gnode dot))
 
-(defun dot-from-gref* (gref)
+(defparameter *visualize-grefs* nil)
+
+(defun dot-from-gref (gref)
   (or (gethash gref *dot-mapping*)
-      (let ((dot (gensym "GNODE")))
-        (setf (gethash gref *dot-mapping*) dot)
-        (dot-from-gnode (gderef gref) dot)
-        dot)))
+      (let ((dot-gref (gensym "GREF"))
+            (dot-gnode (gensym "GNODE")))
+        (setf (gethash gref *dot-mapping*) dot-gref)
+        (if *visualize-grefs*
+            (progn
+              (dot-from-gnode (gderef gref) dot-gnode)
+              (dot-node dot-gref "" "shape=point")
+              (dot-edge dot-gref dot-gnode ""))
+            (dot-from-gnode (gderef gref) dot-gref))
+        dot-gref)))
 
 (defun format-symbol (x)
   (if (symbolp x) (symbol-name x)
@@ -22,31 +30,30 @@
 
 (defmethod dot-from-gnode ((gnode cons-gnode) dot)
   (dot-node dot (format-symbol (gnode-cons gnode)) "shape=box, fillcolor=chartreuse")
-  (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
+  (loop for arg-dot in (mapcar #'dot-from-gref (gnode-args gnode))
         for index = 1 then (1+ index)
-        do (dot-edge dot arg-dot (format nil "~D." index)))  )
+        do (dot-edge dot arg-dot (format nil "~D." index))))
 
 (defmethod dot-from-gnode ((gnode var-gnode) dot)
   (dot-node dot (format-symbol (gnode-var gnode)) "shape=box, fillcolor=lightblue"))
 
 (defmethod dot-from-gnode ((gnode apply-gnode) dot)
   (dot-node dot "" "shape=circle, ordering=out, fixedsize=true, width=.25")
-  (dot-edge dot (dot-from-gref* (gnode-fun gnode)) "f")
-  (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
-        for index = 1 then (1+ index)
-        do (dot-edge dot arg-dot (format nil "~D." index)))
-  )
-
-(defmethod dot-from-gnode ((gnode fun-gnode) dot)
-  (dot-node dot (format-symbol (gnode-fun-name gnode)) "shape=box, fillcolor=yellow")
-    (loop for arg-dot in (mapcar #'dot-from-gref* (gnode-args gnode))
+  (dot-edge dot (dot-from-gref (gnode-fun gnode)) "f")
+  (loop for arg-dot in (mapcar #'dot-from-gref (gnode-args gnode))
         for index = 1 then (1+ index)
         do (dot-edge dot arg-dot (format nil "~D." index))))
 
-(defun dot-from-gref (gref &optional (stream *standard-output*))
+(defmethod dot-from-gnode ((gnode fun-gnode) dot)
+  (dot-node dot (format-symbol (gnode-fun-name gnode)) "shape=box, fillcolor=yellow")
+    (loop for arg-dot in (mapcar #'dot-from-gref (gnode-args gnode))
+        for index = 1 then (1+ index)
+        do (dot-edge dot arg-dot (format nil "~D." index))))
+
+(defun dot-from-graph (gref &optional (stream *standard-output*))
   (let ((*dot-mapping* (make-hash-table))
         (*dot-stream* stream))
     (format *dot-stream* "digraph G{~&")
     (format *dot-stream* "node[style=filled]")
-    (dot-from-gref* gref)
+    (dot-from-gref gref)
     (format *dot-stream* "~&}")))
