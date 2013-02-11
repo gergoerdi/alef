@@ -42,7 +42,7 @@
     (defvar zig (cons 1 zag))
     (defvar zag (cons 2 zig))
 
-    (defvar main zig)
+    (defvar main nats)
     ))
 
 (setf *prog*
@@ -95,8 +95,13 @@
   (with-open-file (s "bar-z.dot" :direction :output :if-exists :supersede)
     (in-fresh-context
       (let ((g (parse-program *prog*)))
-        ;; (reduce-to-whnf g)
-        (simplify-apps g)
+        (reduce-to-whnf g)
+        ;; (simplify-apps g)
+        (loop for g* in (gnode-args (gderef g))
+              do (reduce-to-whnf g*))
+        (loop for g* in (loop for g* in (gnode-args (gderef g))
+                              append (gnode-args (gderef g*)))
+              do (reduce-to-whnf g*))
         (dot-from-graph g s)       
         g))))
 

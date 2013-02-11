@@ -30,6 +30,5 @@
             do (register-match-function fun-name match-nodes)))
 
     (let ((g (graph-from-var 'main (cdr (assoc 'main *vars*)))))
-      ;; (fill-var-gref g)
-      g)
-    ))
+      (fill-var-gref g)
+      g)))

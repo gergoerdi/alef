@@ -70,7 +70,8 @@
 (defvar *vars-built*)
 
 (defclass bottom-gnode (gnode)
-  ((ptr :initarg :ptr :reader gnode-var-ptr)))
+  ((var :initarg :var :reader gnode-var)
+   (ptr :initarg :ptr :reader gnode-var-ptr)))
 
 (defun graph-from-var (var-name var-expr)
   (or (cadr (assoc var-name *vars-built*))
@@ -91,7 +92,7 @@
 (defgeneric fill-var-gref** (gref gnode))
 
 (defmethod fill-var-gref** (gref (gnode bottom-gnode))
-  (let ((gref* (var-gref (gnode-var-def gnode))))    
+  (let ((gref* (car (gnode-var-ptr gnode))))    
     (fill-var-gref* gref*)))
 
 (defmethod fill-var-gref** (gref gnode)
