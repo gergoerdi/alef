@@ -9,9 +9,6 @@
 (defun make-gref (gnode)
   (make-instance 'gref :node gnode))
 
-(defclass bottom-gnode (gnode)
-  ((var-def :initarg :var-def :reader gnode-var-def)))
-
 (defclass cons-gnode (gnode)
   ((cons :initarg :cons :reader gnode-cons)
    (args :initarg :args :initform nil :accessor gnode-args)))
@@ -30,37 +27,60 @@
 
 (defgeneric graph-from-expr (expr))
 
+(defmethod graph-from-expr ((expr var-expr))
+  (let* ((var-name (expr-symbol expr))
+         (var-expr (cdr (assoc var-name *vars*))))
+    (if var-expr (graph-from-var var-name var-expr)   
+        (make-gref
+         (or (let ((fun (lookup-function var-name)))
+               (and fun (make-instance 'fun-gnode :fun-name var-name :arity (function-arity fun))))
+             (make-instance 'var-gnode :var var-name))))))
+
+(defmethod graph-from-expr ((expr cons-expr))
+  (make-gref (make-instance 'cons-gnode :cons (expr-symbol expr))))
+
+(defmethod graph-from-expr ((expr apply-expr))
+  (make-gref
+   (let ((fun (graph-from-expr (expr-fun expr)))
+         (arg (graph-from-expr (expr-arg expr) )))
+     (make-instance 'apply-gnode :fun fun :args (list arg)))))
+
+(defmethod graph-from-expr ((expr let-expr))
+  (error "Not implemented: let")
+  ;; (let ((vars-new (make-hash-table)))
+  ;;   (loop for k being the hash-key using (hash-value v) of *vars*
+  ;;         do (setf (gethash k vars-new) v))
+  ;;   (let ((*vars* vars-new))
+  ;;     (loop for (name . val) in (expr-bindings expr)
+  ;;           do (setf (gethash name *vars*)
+  ;;                    (make-instance 'var-blueprint :name name :expr val)))
+  ;;     (graph-from-expr (expr-body expr))))
+  )
+
+(defmethod node-from-expr ((expr lambda-expr))
+  (error "Not implemented: lambdas")
+  ;; (let* ((new-vars (loop for name in (mapcan #'pattern-vars (expr-formals expr))
+  ;;                        for var = (make-gref (make-instance 'var-gnode :var name))
+  ;;                        collect (cons name var))))
+  ;;   (error "Not implemented: lambda lifting")
+  ;;   (graph-from-expr (expr-body expr) (append new-vars vars)))
+  )
+
 (defvar *vars*)
+(defvar *vars-built*)
 
-(defclass var-def ()
-  ())
+(defclass bottom-gnode (gnode)
+  ((ptr :initarg :ptr :reader gnode-var-ptr)))
 
-(defclass var-todo (var-def)
-  ((var :initarg :var :reader var-name)
-   (expr :initarg :expr :reader var-expr)))
-
-(defclass var-built (var-def)
-  ((gref :initarg :gref :accessor var-gref)))
-
-(defgeneric graph-from-var (var-def))
-
-(defmethod graph-from-var ((var-def var-built))
-  (var-gref var-def))
-
-(defmethod graph-from-var ((var-def var-todo))
-  (let* ((gref (make-instance 'gref))
-         (var-def* (make-instance 'var-built :gref gref)))
-    (setf (gderef gref) (make-instance 'bottom-gnode :var-def var-def*))
-    (push (cons (var-name var-def) var-def*) *vars*)
-    (let ((gref* (graph-from-expr (var-expr var-def))))
-      (setf (var-gref var-def*) gref*))))
-
-;; (defmethod graph-from-var ((var-def var-todo))
-;;   (make-gref (make-instance 'bottom-gnode :var-def var-def)))
-
-;; (defun fill-all-vars ()
-;;   (loop for var in  *vars*
-;;         do (rplacd var (make-instance 'var-built :gref (graph-from-expr (var-expr (cdr var)))))))
+(defun graph-from-var (var-name var-expr)
+  (or (cadr (assoc var-name *vars-built*))
+      (let* ((gref (make-instance 'gref))
+             (gref-ptr (list gref)))
+        (setf (gderef gref) (make-instance 'bottom-gnode :ptr gref-ptr))
+        (push (cons var-name gref-ptr) *vars-built*)
+        (let ((gref* (graph-from-expr var-expr)))
+          (rplaca gref-ptr gref*)
+          gref*))))
 
 (defvar *filled*)
 
@@ -100,41 +120,3 @@
   (setf (gnode-args gnode) (mapcar #'fill-var-gref* (gnode-args gnode)))
   (values))
 
-(defmethod graph-from-expr ((expr var-expr))
-  (let* ((var-name (expr-symbol expr))
-         (var-def (cdr (assoc var-name *vars*))))
-    (if var-def (graph-from-var var-def)   
-        (make-gref
-         (or (let ((fun (lookup-function var-name)))
-               (and fun (make-instance 'fun-gnode :fun-name var-name :arity (function-arity fun))))
-             (make-instance 'var-gnode :var var-name))))))
-
-(defmethod graph-from-expr ((expr cons-expr))
-  (make-gref (make-instance 'cons-gnode :cons (expr-symbol expr))))
-
-(defmethod graph-from-expr ((expr apply-expr))
-  (make-gref
-   (let ((fun (graph-from-expr (expr-fun expr)))
-         (arg (graph-from-expr (expr-arg expr) )))
-     (make-instance 'apply-gnode :fun fun :args (list arg)))))
-
-(defmethod graph-from-expr ((expr let-expr))
-  (error "Not implemented: let")
-  ;; (let ((vars-new (make-hash-table)))
-  ;;   (loop for k being the hash-key using (hash-value v) of *vars*
-  ;;         do (setf (gethash k vars-new) v))
-  ;;   (let ((*vars* vars-new))
-  ;;     (loop for (name . val) in (expr-bindings expr)
-  ;;           do (setf (gethash name *vars*)
-  ;;                    (make-instance 'var-blueprint :name name :expr val)))
-  ;;     (graph-from-expr (expr-body expr))))
-  )
-
-(defmethod node-from-expr ((expr lambda-expr))
-  (error "Not implemented: lambdas")
-  ;; (let* ((new-vars (loop for name in (mapcan #'pattern-vars (expr-formals expr))
-  ;;                        for var = (make-gref (make-instance 'var-gnode :var name))
-  ;;                        collect (cons name var))))
-  ;;   (error "Not implemented: lambda lifting")
-  ;;   (graph-from-expr (expr-body expr) (append new-vars vars)))
-  )

@@ -15,12 +15,7 @@
                         collect (cons cons-name type-name))))
 
     (loop for (defvar var-name var-body) in (gethash 'defvar program-parts)
-          do (push
-              (cons var-name
-                    (make-instance 'var-todo
-                                   :var var-name
-                                   :expr (normalize-expr var-body)))
-              *vars*))
+          do (push (cons var-name (normalize-expr var-body)) *vars*))
            
     (let ((fun-defs
            (loop for (deffun name . matches) in (gethash 'deffun program-parts)
@@ -34,7 +29,7 @@
                                     collect (cons pats (graph-from-expr expr)))
             do (register-match-function fun-name match-nodes)))
 
-    (let ((g (graph-from-var (cdr (assoc 'main *vars*)))))
+    (let ((g (graph-from-var 'main (cdr (assoc 'main *vars*)))))
       ;; (fill-var-gref g)
       g)
     ))
