@@ -26,9 +26,7 @@
       ;; Build graphs for functions
       (loop for (fun-name . matches) in fun-defs
             for match-nodes = (loop for (pats . expr) in matches
-                                    collect (cons pats (graph-from-expr expr)))
+                                    collect (cons pats (fill-var-gref (graph-from-expr expr))))
             do (register-match-function fun-name match-nodes)))
 
-    (let ((g (graph-from-var 'main (cdr (assoc 'main *vars*)))))
-      (fill-var-gref g)
-      g)))
+    (fill-var-gref (graph-from-var 'main (cdr (assoc 'main *vars*))))))
