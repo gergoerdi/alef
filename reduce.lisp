@@ -43,6 +43,9 @@
 (defmethod reduce-graph-node ((gnode cons-gnode))
   nil)
 
+(defmethod reduce-graph-node ((gnode bottom-gnode))
+  nil)
+
 (defmethod reduce-graph-node ((gnode var-gnode))
   ;; (error "Internal error: variable reference in head")
   nil)
