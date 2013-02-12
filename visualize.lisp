@@ -20,13 +20,28 @@
 
 (defun format-symbol (x)
   (if (symbolp x) (symbol-name x)
-      (format nil "~A" x)))
+      (format nil "~S" x)))
+
+(defconstant +dot-escape-chars+ "\"")
+
+(defun dot-escape (str)
+  (labels ((escape-p (char)
+             (find char +dot-escape-chars+))
+
+           (escape-char (char)
+             (format nil "\\~A" char)))
+    (with-output-to-string (s)
+      (loop for start = 0 then (1+ pos)
+            for pos = (position-if #'escape-p str :start start)
+            do (write-sequence str s :start start :end pos)
+            when pos do (write-sequence (escape-char (char str pos)) s)
+            while pos))))
 
 (defun dot-node (dot label &optional style)
-  (format *dot-stream* "~&~A [label=\"~A\" ~A]" dot label (if style (format nil ", ~A" style) "")))
+  (format *dot-stream* "~&~A [label=\"~A\" ~A]" dot (dot-escape label) (if style (format nil ", ~A" style) "")))
 
 (defun dot-edge (dot/from dot/to label)
-  (format *dot-stream* "~&~A -> ~A[label=\"~A\"]" dot/from dot/to label))
+  (format *dot-stream* "~&~A -> ~A[label=\"~A\"]" dot/from dot/to (dot-escape label)))
 
 (defmethod dot-from-gnode ((gnode bottom-gnode) dot)
   (dot-node dot (format-symbol (gnode-var gnode)) "shape=house, fillcolor=lightsalmon")
@@ -36,7 +51,13 @@
   )
 
 (defmethod dot-from-gnode ((gnode cons-gnode) dot)
-  (dot-node dot (format-symbol (gnode-cons gnode)) "shape=box, fillcolor=chartreuse")
+  (let* ((prim (typecase (gnode-cons gnode)
+                 (integer t)
+                 (string t)))
+         (style (if prim "\"filled, diagonals\"" "filled"))
+         (color "chartreuse")
+         (style (format nil "shape=box, style=~A, fillcolor=~A" style color)))
+    (dot-node dot (format-symbol (gnode-cons gnode)) style))
   (loop for arg-dot in (mapcar #'dot-from-gref (gnode-args gnode))
         for index = 1 then (1+ index)
         do (dot-edge dot arg-dot (format nil "~D." index))))
