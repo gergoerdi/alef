@@ -46,25 +46,11 @@
      (make-instance 'apply-gnode :fun fun :args (list arg)))))
 
 (defmethod graph-from-expr ((expr let-expr))
-  (error "Not implemented: let")
-  ;; (let ((vars-new (make-hash-table)))
-  ;;   (loop for k being the hash-key using (hash-value v) of *vars*
-  ;;         do (setf (gethash k vars-new) v))
-  ;;   (let ((*vars* vars-new))
-  ;;     (loop for (name . val) in (expr-bindings expr)
-  ;;           do (setf (gethash name *vars*)
-  ;;                    (make-instance 'var-blueprint :name name :expr val)))
-  ;;     (graph-from-expr (expr-body expr))))
-  )
+  (let ((*vars* (append (expr-bindings expr) *vars*)))
+    (fill-var-gref (graph-from-expr (expr-body expr)))))
 
-(defmethod node-from-expr ((expr lambda-expr))
-  (error "Not implemented: lambdas")
-  ;; (let* ((new-vars (loop for name in (mapcan #'pattern-vars (expr-formals expr))
-  ;;                        for var = (make-gref (make-instance 'var-gnode :var name))
-  ;;                        collect (cons name var))))
-  ;;   (error "Not implemented: lambda lifting")
-  ;;   (graph-from-expr (expr-body expr) (append new-vars vars)))
-  )
+(defmethod graph-from-expr ((expr lambda-expr))
+  (error "Not implemented: lambdas"))
 
 (defvar *vars*)
 (defvar *vars-built*)
@@ -120,4 +106,3 @@
   (setf (gnode-fun gnode) (fill-var-gref* (gnode-fun gnode)))
   (setf (gnode-args gnode) (mapcar #'fill-var-gref* (gnode-args gnode)))
   (values))
-
