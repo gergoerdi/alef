@@ -54,7 +54,7 @@
   (let* ((prim (typecase (gnode-cons gnode)
                  (integer t)
                  (string t)))
-         (style (if prim "\"filled, diagonals\"" "filled"))
+         (style (if prim "\"filled, rounded\"" "filled"))
          (color "chartreuse")
          (style (format nil "shape=box, style=~A, fillcolor=~A" style color)))
     (dot-node dot (format-symbol (gnode-cons gnode)) style))
