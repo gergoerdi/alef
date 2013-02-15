@@ -123,6 +123,21 @@
                 (zag (cons 2 zig)))
             zig))))
 
+(setf *prog*
+      '((defvar main
+          (let ((x 1)
+                (y x))
+            (+ (let ((x 3)
+                     (y (+ 9 x)))
+                 y)
+               y)))))
+
+(setf *prog*
+      '((defvar main
+          (let ((x 1))
+            (+ x
+               x)))))
+
 (defun test ()
   (with-open-file (s "bar-z.dot" :direction :output :if-exists :supersede)
     (in-fresh-context

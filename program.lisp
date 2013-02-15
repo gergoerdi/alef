@@ -14,8 +14,9 @@
            append (loop for (cons-name . cons-args) in constructors
                         collect (cons cons-name type-name))))
 
-    (loop for (defvar var-name var-body) in (gethash 'defvar program-parts)
-          do (push (cons var-name (normalize-expr var-body)) *vars*))
+    (add-vars
+     (loop for (defvar var-name var-body) in (gethash 'defvar program-parts)
+           collect (cons var-name (normalize-expr var-body))))
            
     (let ((fun-defs
            (loop for (deffun name . matches) in (gethash 'deffun program-parts)

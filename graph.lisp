@@ -29,8 +29,8 @@
 
 (defmethod graph-from-expr ((expr var-expr))
   (let* ((var-name (expr-symbol expr))
-         (var-expr (cdr (assoc var-name *vars*))))
-    (if var-expr (graph-from-var var-name var-expr)
+         (var-data (cdr (assoc var-name *vars*))))
+    (if var-data (graph-from-var var-name var-data)
         (make-gref
          (or (let ((fun (lookup-function var-name)))
                (and fun (make-instance 'fun-gnode :fun-name var-name :arity (function-arity fun))))
@@ -46,26 +46,27 @@
      (make-instance 'apply-gnode :fun fun :args (list arg)))))
 
 (defmethod graph-from-expr ((expr let-expr))
-  (let ((*vars* (append (expr-bindings expr) *vars*)))
-    (fill-var-gref (graph-from-expr (expr-body expr)))))
+  (let ((*vars* *vars*))
+    (add-vars (expr-bindings expr))
+    ;; (fill-var-gref (graph-from-expr (expr-body expr)))
+    (graph-from-expr (expr-body expr))))
 
 (defmethod graph-from-expr ((expr lambda-expr))
   (error "Not implemented: lambdas"))
 
-(defvar *vars*)
 (defvar *vars-built*)
 
 (defclass bottom-gnode (gnode)
   ((var :initarg :var :reader gnode-var)
    (ptr :initarg :ptr :reader gnode-var-ptr)))
 
-(defun graph-from-var (var-name var-expr)
-  (or (cadr (assoc var-name *vars-built*))
+(defun graph-from-var (var-name var-data)
+  (or (car (second var-data))
       (let* ((gref (make-instance 'gref))
              (gref-ptr (list gref)))
         (setf (gderef gref) (make-instance 'bottom-gnode :var var-name :ptr gref-ptr))
-        (push (cons var-name gref-ptr) *vars-built*)
-        (let ((gref* (graph-from-expr var-expr)))
+        (setf (second var-data) gref-ptr)
+        (let ((gref* (graph-from-expr (first var-data))))
           (rplaca gref-ptr gref*)
           gref*))))
 
