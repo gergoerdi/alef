@@ -1,8 +1,12 @@
-(defclass gnode ()
+(defclass dotable ()
+  ((dot-name :initform (gensym "V") :reader dot-name))
+  (:documentation "Something that can be turned into a GraphViz node"))
+
+(defclass gnode (dotable)
   ()
   (:documentation "Node in the graph representation"))
 
-(defclass gref ()
+(defclass gref (dotable)
   ((node :initarg :node :accessor gderef))
   (:documentation "Pointer in the graph representation"))
 
