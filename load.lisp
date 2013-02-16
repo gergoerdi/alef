@@ -1,3 +1,4 @@
+(load "syntax-defs.lisp")
 (load "registry.lisp")
 (load "syntax.lisp")
 (load "prim.lisp")

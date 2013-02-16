@@ -1,51 +1,7 @@
-(defclass expr ()
-  ()
-  (:documentation "Expression"))
-
-(defclass symbol-expr (expr)
-  ((symbol :initarg :symbol :reader expr-symbol)))
-
-(defclass var-expr (symbol-expr)
-  ()
-  (:documentation "Variable occurance"))
-
-(defclass cons-expr (symbol-expr)
-  ()
-  (:documentation "Constructor"))
-
-(defclass apply-expr (expr)
-  ((fun :initarg :fun :reader expr-fun)
-   (arg :initarg :arg :reader expr-arg)))
-
-(defclass let-expr (expr)
-  ((bindings :initarg :bindings :reader expr-bindings)
-   (body :initarg :body :reader expr-body)))
-
-(defclass lambda-expr (expr)
-  ((formals :initarg :formals :reader expr-formals)
-   (body :initarg :body :reader expr-body)))
-
-(defclass pattern ()
-  ()
-  (:documentation "Pattern"))
-
-(defclass wildcard-pattern (pattern)
-  ()
-  (:documentation "Wildcard pattern"))
-
-(defclass var-pattern (pattern)
-  ((symbol :initarg :symbol :reader pattern-symbol))
-  (:documentation "Variable binder"))
-
-(defclass cons-pattern (pattern)
-  ((cons :initarg :cons :reader pattern-cons)
-   (args :initarg :args :initform nil :reader pattern-args))
-  (:documentation "Constructor pattern"))
-
 (defgeneric pattern-vars (pat))
 
 (defmethod pattern-vars ((pat wildcard-pattern))
-  (list))
+  nil)
 
 (defmethod pattern-vars ((pat var-pattern))
   (list (pattern-symbol pat)))
