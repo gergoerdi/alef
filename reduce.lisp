@@ -47,8 +47,7 @@
   nil)
 
 (defmethod reduce-graph-node ((gnode var-gnode))
-  ;; (error "Internal error: variable reference in head")
-  nil)
+  (error "Internal error: variable reference in head"))
 
 (defun split-at (lst i)
   (labels ((aux (lst i before)
