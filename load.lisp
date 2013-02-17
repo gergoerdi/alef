@@ -8,3 +8,4 @@
 (load "reduce.lisp")
 (load "visualize.lisp")
 (load "program.lisp")
+(load "lib.lisp")
