@@ -63,7 +63,7 @@
         for index = 1 then (1+ index)
         do (dot-edge (dot-name gnode) arg-dot (format nil "~D." index))))
 
-(defmethod to-dot ((gnode var-gnode) rootp)
+(defmethod to-dot ((gnode param-gnode) rootp)
   (dot-node (dot-name gnode) (format-symbol (gnode-var gnode)) rootp "shape=box, fillcolor=lightblue"))
 
 (defmethod to-dot ((gnode apply-gnode) rootp)

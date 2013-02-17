@@ -17,7 +17,7 @@
   ((cons :initarg :cons :reader gnode-cons)
    (args :initarg :args :initform nil :accessor gnode-args)))
 
-(defclass var-gnode (gnode)
+(defclass param-gnode (gnode)
   ((var :initarg :var :reader gnode-var)))
 
 (defclass apply-gnode (gnode)

@@ -7,7 +7,7 @@
         (make-gref
          (or (let ((fun (lookup-function var-name)))
                (and fun (make-instance 'fun-gnode :fun-name var-name :arity (function-arity fun))))
-             (make-instance 'var-gnode :var var-name))))))
+             (make-instance 'param-gnode :var var-name))))))
 
 (defmethod graph-from-expr ((expr cons-expr))
   (make-gref (make-instance 'cons-gnode :cons (expr-symbol expr))))
@@ -21,8 +21,7 @@
 (defmethod graph-from-expr ((expr let-expr))
   (let ((*vars* *vars*))
     (add-vars (expr-bindings expr))
-    ;; (fill-var-gref (graph-from-expr (expr-body expr)))
-    (graph-from-expr (expr-body expr))))
+    (fill-var-gref (graph-from-expr (expr-body expr)))))
 
 (defmethod graph-from-expr ((expr lambda-expr))
   (error "Not implemented: lambdas"))

@@ -46,8 +46,8 @@
 (defmethod reduce-graph-node ((gnode bottom-gnode))
   nil)
 
-(defmethod reduce-graph-node ((gnode var-gnode))
-  (error "Internal error: variable reference in head"))
+(defmethod reduce-graph-node ((gnode param-gnode))
+  (error "Internal error: parameter reference in head"))
 
 (defun split-at (lst i)
   (labels ((aux (lst i before)
