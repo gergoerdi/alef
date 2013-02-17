@@ -53,3 +53,15 @@
        (with-open-file (s "graph-03-bottom.dot" :direction :output :if-exists :supersede)
          (dot-from-graph g s))
        g))))
+
+(defun hello ()
+  (let ((p `((defvar main (string-append "Hello, " "world!")))))
+    (in-fresh-context
+           (let ((g (parse-program p)))
+       (simplify-apps g)
+       (with-open-file (s "hello.dot" :direction :output :if-exists :supersede)
+         (dot-from-graph g s))
+       (reduce-to-whnf g)
+       (with-open-file (s "hello-reduced.dot" :direction :output :if-exists :supersede)
+         (dot-from-graph g s))
+       g))))
