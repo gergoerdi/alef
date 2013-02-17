@@ -2,6 +2,7 @@
 (load "registry.lisp")
 (load "syntax.lisp")
 (load "prim.lisp")
+(load "graph-defs.lisp")
 (load "graph.lisp")
 (load "deepclone.lisp")
 (load "match.lisp")
